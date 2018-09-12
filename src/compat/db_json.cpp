@@ -879,6 +879,53 @@ db_json_extract_document_from_path (const JSON_DOC *document, const char *raw_pa
   return NO_ERROR;
 }
 
+/*
+* db_json_contains_path () - Checks if the document contains data at given path
+*
+* return                  : error code
+* document (in)           : document where to search
+* raw_path (in)           : check path
+* result (out)            : true/false
+*/
+int
+db_json_contains_path_func (const JSON_DOC *document, const char *raw_path, bool &result)
+{
+  int error_code = NO_ERROR;
+  std::string json_pointer_string;
+
+  result = false;
+
+  if (document == NULL)
+    {
+      return false;
+    }
+
+  // path must be JSON pointer
+  error_code = db_json_convert_sql_path_to_pointer (raw_path, json_pointer_string);
+  if (error_code != NO_ERROR)
+    {
+      ASSERT_ERROR();
+      return error_code;
+    }
+
+  JSON_POINTER p (json_pointer_string.c_str());
+  const JSON_VALUE *resulting_json = NULL;
+
+  if (!p.IsValid())
+    {
+      er_set (ER_ERROR_SEVERITY, ARG_FILE_LINE, ER_JSON_INVALID_PATH, 0);
+      return ER_JSON_INVALID_PATH;
+    }
+
+  resulting_json = p.Get (*document);
+  if (resulting_json != NULL)
+    {
+      result = true;
+    }
+
+  return NO_ERROR;
+}
+
 char *
 db_json_get_raw_json_body_from_document (const JSON_DOC *doc)
 {
